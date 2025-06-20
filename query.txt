@@ -1,0 +1,195 @@
+# Database Query Commands for Task Management System
+# Execute these commands in your database client or terminal
+
+# ===========================================
+# SELECT USERS
+# ===========================================
+-- Display all users in table format
+SELECT 
+    id,
+    username,
+    email,
+    created_at,
+    updated_at
+FROM user
+ORDER BY id;
+
+-- Display users with task count
+SELECT 
+    u.id,
+    u.username,
+    u.email,
+    COUNT(t.id) as task_count,
+    u.created_at
+FROM user u
+LEFT JOIN task t ON u.id = t.user_id
+GROUP BY u.id, u.username, u.email, u.created_at
+ORDER BY u.id;
+
+# ===========================================
+# SELECT TASKS
+# ===========================================
+-- Display all tasks in table format
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.status,
+    t.priority,
+    t.due_date,
+    u.username as assigned_user,
+    t.created_at,
+    t.updated_at
+FROM task t
+JOIN user u ON t.user_id = u.id
+ORDER BY t.id;
+
+-- Display tasks with formatted dates
+SELECT 
+    t.id,
+    t.title,
+    SUBSTRING(t.description, 1, 50) as description_preview,
+    t.status,
+    t.priority,
+    DATE(t.due_date) as due_date,
+    u.username as assigned_user,
+    DATE(t.created_at) as created_date
+FROM task t
+JOIN user u ON t.user_id = u.id
+ORDER BY t.created_at DESC;
+
+# ===========================================
+# SELECT TASKS BY STATUS
+# ===========================================
+-- Display tasks by status: pending
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.priority,
+    t.due_date,
+    u.username as assigned_user,
+    t.created_at
+FROM task t
+JOIN user u ON t.user_id = u.id
+WHERE t.status = 'pending'
+ORDER BY t.priority DESC, t.due_date ASC;
+
+-- Display tasks by status: in_progress
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.priority,
+    t.due_date,
+    u.username as assigned_user,
+    t.created_at
+FROM task t
+JOIN user u ON t.user_id = u.id
+WHERE t.status = 'in_progress'
+ORDER BY t.priority DESC, t.due_date ASC;
+
+-- Display tasks by status: completed
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.priority,
+    t.due_date,
+    u.username as assigned_user,
+    t.created_at,
+    t.updated_at
+FROM task t
+JOIN user u ON t.user_id = u.id
+WHERE t.status = 'completed'
+ORDER BY t.updated_at DESC;
+
+-- Display task count by status
+SELECT 
+    status,
+    COUNT(*) as task_count
+FROM task
+GROUP BY status
+ORDER BY task_count DESC;
+
+# ===========================================
+# SELECT TASKS BY USER
+# ===========================================
+-- Display tasks by specific user (replace USERNAME with actual username)
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.status,
+    t.priority,
+    t.due_date,
+    t.created_at
+FROM task t
+JOIN user u ON t.user_id = u.id
+WHERE u.username = 'USERNAME'
+ORDER BY t.status, t.priority DESC, t.due_date ASC;
+
+-- Display tasks by user ID (replace USER_ID with actual user ID)
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.status,
+    t.priority,
+    t.due_date,
+    t.created_at
+FROM task t
+WHERE t.user_id = USER_ID
+ORDER BY t.status, t.priority DESC, t.due_date ASC;
+
+-- Display all users with their task summary
+SELECT 
+    u.id,
+    u.username,
+    u.email,
+    COUNT(t.id) as total_tasks,
+    SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) as pending_tasks,
+    SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_tasks,
+    SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks
+FROM user u
+LEFT JOIN task t ON u.id = t.user_id
+GROUP BY u.id, u.username, u.email
+ORDER BY u.id;
+
+# ===========================================
+# USEFUL AGGREGATION QUERIES
+# ===========================================
+-- Display task statistics
+SELECT 
+    COUNT(*) as total_tasks,
+    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+    SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count,
+    SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high_priority_count,
+    SUM(CASE WHEN priority = 'medium' THEN 1 ELSE 0 END) as medium_priority_count,
+    SUM(CASE WHEN priority = 'low' THEN 1 ELSE 0 END) as low_priority_count
+FROM task;
+
+-- Display overdue tasks
+SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.status,
+    t.priority,
+    t.due_date,
+    u.username as assigned_user,
+    DATEDIFF(t.due_date, CURRENT_DATE) as days_overdue
+FROM task t
+JOIN user u ON t.user_id = u.id
+WHERE t.due_date < CURRENT_DATE AND t.status != 'completed'
+ORDER BY t.due_date ASC;
+
+# ===========================================
+# NOTES
+# ===========================================
+# - Replace 'USERNAME' with actual username when using user-specific queries
+# - Replace USER_ID with actual user ID when using user ID queries
+# - These queries assume SQLite/MySQL syntax
+# - For PostgreSQL, use CURRENT_DATE instead of CURRENT_DATE
+# - For better table formatting, consider using a database client with table output 
